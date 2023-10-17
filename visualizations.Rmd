@@ -1,0 +1,932 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(cfbplotR)
+library(gt)
+library(gtExtras)
+library(cfbfastR)
+#?cfbplotR
+#remove.packages("cfbplotR")
+#install.packages("cfbplotR")
+#R.version
+#install.packages("gt","gtExtras")
+#remove.packages("cfbfastR")
+
+#pff_cfbfastR_IDs <- read_csv("~/Downloads/playersmasterlist.csv") |> filter(current_eligible_year == 2024:2027)
+#view(pff_cfbfastR_IDs)
+
+pff_wk6_qb <- read_csv("~/Downloads/passing_summary_wk6.csv") |> filter(attempts >= 12) |> rename(athlete_name = player) |> select(athlete_name,team_name,
+        avg_time_to_throw,big_time_throws,btt_rate,drops,drop_rate,turnover_worthy_plays,twp_rate,qb_rating,attempts,completions,yards,thrown_aways) |> rename(att = attempts) |> rename(comp = completions) |> rename(yds = yards) 
+#|> mutate(att = att - thrown_aways,comp = comp - thrown_aways)
+view(pff_qb_wk6_1)
+
+pff_qb_wk6_1 <- left_join(pff_wk6_qb,wk_up_5_1_wk6, by = "athlete_name") |> select(-yds,-team_name,-comp,-att) |> relocate(team, .after = athlete_name)
+pff_qb_wk6_fix <- anti_join(wk_up_5_1_wk6,pff_wk6_qb, by = "athlete_name")
+wk6_qb_top <- cfbd_metrics_ppa_players_games(year = 2023, week = 6) |> filter(position == "QB") |> rename(athlete_name = name)
+view(pff_qb_wk6_fix)
+QB_wk_6 <- left_join(pff_qb_wk6_1,wk6_qb_top, by = "athlete_name") |> arrange(-avg_PPA_pass)
+top_qb_wk5_epa_pff <- QB_wk_5 |> select(athlete_name,team.x,passing_completions,att.y,yds.y,`yds/att`,td,int,opponent,avg_PPA_pass) |> rename("team" = "team.x","comp" = "comp.y","yds" = "yds.y", "pass_epa_play" = "avg_PPA_pass","att" = "att.y") |> relocate(opponent, .after = team)
+top_QB_wk6_table <- QB_wk_6 |> select(athlete_name,team.y,passing_completions,passing_attempts,passing_yds,`yds/att`,passing_td,passing_int,opponent,avg_PPA_pass) |> rename("team" = 
+"team.y","pass_epa_play" = "avg_PPA_pass") |> relocate(opponent, .after = team) |> dplyr::slice(1:10)
+view(QB_wk_5)
+view(top_QB_wk6_table)
+top_QB_wk6_table_final <- top_QB_wk6_table |> 
+  gt() |> gt_theme_538() |> cols_label( passing_yds = "Yards", 'yds/att' = "Yards Per Attempt", passing_td = "TD", passing_int = "INT",
+                                        passing_completions = "Completions", passing_attempts = "Attempts", "pass_epa_play" = "Passing EPA/Play", "team" = "Team",opponent = "Opponent", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 40) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR") |> tab_header(
+  title = md("Top 10 QB's WEEK 6"), subtitle = "By Passing EPA/Play") |> opt_align_table_header(align = "center")
+top_QB_wk6_table_final |> gtsave("QBs_wk_6_final.png", vwidth = 1000, vheight = 5)
+top_QB_wk6_table_final
+
+
+#-------------------------------------------------------------------------------------------------------------
+
+pff_wk4_qb <- read_csv("~/Downloads/passing_summary_wk4.csv") |> filter(attempts >= 12) |> rename(name = player) |> select(name,team_name,
+        avg_time_to_throw,big_time_throws,btt_rate,drops,drop_rate,turnover_worthy_plays,twp_rate,qb_rating,attempts,completions,yards,thrown_aways) |> rename(att = attempts) |> rename(comp = completions) |> rename(yds = yards) 
+#|> mutate(att = att - thrown_aways,comp = comp - thrown_aways)
+
+pff_qb_wk4_1 <- left_join(pff_wk4_qb,wk_up_5_1_wk4, by = "name") |> select(-yds.x,-team_name,-comp.x,-att.x) |> relocate(team, .after = name)
+#pff_b_wk3_fix <- anti_join(wk_up_5_1,pff_wk3_qb, by = c("name","att","yds"))
+#view(pff_qb_wk4_1)
+QB_wk_4 <- left_join(pff_qb_wk4_1,wk3_qb_top_wk4, by = "name") |> arrange(-avg_PPA_pass)
+top_QB_wk4_table <- QB_wk_4 |> select(name,team.x,comp.y,att.y,yds.y,`yds/att`,td,int,opponent,avg_PPA_pass) |> rename("team" = "team.x","comp" = "comp.y","yds" = "yds.y", "pass_epa_play" = "avg_PPA_pass","att" = "att.y") |> relocate(opponent, .after = team) |> slice(1:10)
+top_QB_wk4_table_final <- top_QB_wk4_table |> 
+  gt() |> gt_theme_538() |> cols_label( yds = "Yards", 'yds/att' = "Yards Per Attempt", td = "TD", int = "INT",
+                                        comp = "Completions", att = "Attempts", "pass_epa_play" = "Passing EPA/Play", "team" = "Team",
+                                        opponent = "Opponent", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR") |> tab_header(
+  title = md("Top 10 QB's WEEK 4") , subtitle = "By Passing EPA/Play") |> opt_align_table_header(align = "center")
+top_QB_wk4_table_final |> gtsave("QBs_wk4_final.png", vwidth = 800, vheight = 5)
+
+top_QB_wk4_table_final
+#view(pff_wk4_qb)
+view(QB_wk_4)
+
+
+#qb_top <- left_join(wk_up_5_1,wk3_qb_top, by = c("name","team"))
+#wk3_qb_top_wk4 <- cfbd_metrics_ppa_players_games(year = 2023, week = 4) |> filter(position == "QB")
+
+#view(wk3_qb_top_wk4)
+
+```
+
+
+```{r}
+pff_wk6_rb <- read_csv("~/Downloads/rushing_summary_wk6.csv") |> filter(attempts >= 8, position == "HB") |> rename(athlete_name = player) |> select(athlete_name,explosive,first_downs,fumbles)
+pff_rb_wk6_1<- left_join(pff_wk6_rb,wk_up_f_rb_wk6, by = "athlete_name") |> relocate(explosive,.after = rushing_td) |> relocate(first_downs, .after = explosive) |> relocate(fumbles, .after = first_downs) |> arrange(-rushing_yds) 
+opponent_6 <- cfbd_stats_game_advanced(year = 2023, week = 6) |> select(team,opponent)
+pff_rb_wk6_2 <- left_join(pff_rb_wk6_1,opponent_6, by = "team")
+#view(pff_rb_wk3_2)
+rb_fix_wk6 <- anti_join(wk_up_f_rb_wk6,pff_wk6_rb, by = "athlete_name")
+view(rb_fix_wk6)
+
+
+#view(opponent)
+
+top_ten_rb_wk6_table <- pff_rb_wk6_2 |> slice(1:10) |> relocate(opponent, .after = team) |> relocate(rushing_car, .after = opponent) |> select(-position) |> 
+  gt() |> gt_theme_538() |> cols_label(rushing_yds = "Yards", 'yds/att' = "Yards Per Carry", rushing_td = "TD",
+                                        rushing_car = "Carries",explosive = "10+ Yard Runs", team = "Team",opponent = "Opponent", first_downs = "First Downs", fumbles = "Fumbles", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 RB's WEEK 6"), subtitle = "By Rushing Yards") |> opt_align_table_header(align = "center")
+top_ten_rb_wk6_table |>  gtsave("RBs_wk6_final_new.png", vwidth = 1000, vheight = 5)
+top_ten_rb_wk6_table
+
+#--------------------------------------------------------------------------------------------------------------------------------
+
+pff_wk4_rb <- read_csv("~/Downloads/rushing_summary_wk4.csv") |> filter(attempts >= 8, position == "HB") |> rename(name = player) |> select(name,explosive,first_downs,fumbles) 
+#view(pff_wk4_rb)
+
+#rb_fix <- anti_join(pff_wk4_rb,wk_up_f_rb_wk4_new, by = "name")
+#view(rb_fix)
+pff_rb_wk4_1<- left_join(pff_wk4_rb,wk_up_f_rb_wk4_new, by = "name") |> relocate(explosive,.after = td) |> relocate(first_downs, .after = explosive) |> relocate(fumbles, .after = first_downs) |> arrange(-yds) 
+opponent_wk4 <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent)
+pff_rb_wk4_2 <- left_join(pff_rb_wk4_1,opponent_wk4, by = "team") |> relocate(opponent, .after = team)
+#view(pff_rb_wk4_2)
+
+top_ten_rb_w4_table <- pff_rb_wk4_2 |> slice(1:10) |> relocate(car,.after = opponent) |>  select(-position) |> 
+  gt() |> gt_theme_538() |> cols_label( yds = "Yards", 'yds/att' = "Yards Per Carry", td = "TD",
+                                        car = "Carries",explosive = "10+ Yard Runs", team = "Team",opponent = "Opponent", first_downs = "First Downs", fumbles = "Fumbles") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 RB's WEEK 4") , subtitle = "By Rushing Yards") |> opt_align_table_header(align = "center")
+top_ten_rb_w4_table |> gtsave("RBs_wk4_final_2.png", vwidth = 800, vheight = 5)
+top_ten_rb_w4_table
+```
+
+```{r}
+pff_wk6_wr <- read_csv("~/Downloads/receiving_summary_wk6.csv") |> filter(receptions >= 4, position == "WR") |> rename(athlete_name = player) |> select(athlete_name,first_downs,fumbles,caught_percent,contested_catch_rate,drops,targets,yards_after_catch) 
+str_trim(pff_wk6_wr$name, side = c("both","left","right"))
+str_trim(wk_up_f_wr_wk6$name, side = c("both","left","right"))
+#row.names(wk_up_f_wr_wk5)[row.names(wk_up_f_wr_wk5) == "Junior Vandeross III"] <- "Junior Vandeross"
+#wr_up_f_wr_wk5_fix <- read_csv("~/Downloads/fix_2.csv")
+wr_fix <- anti_join(wk_up_f_wr_wk6,pff_wk6_wr, by = "athlete_name")
+#view(wr_fix)
+#write_csv(wk_up_f_wr_wk5, "fix.csv")
+#view(wk_up_f_wr_wk5)
+pff_wr_wk6_1<- left_join(pff_wk6_wr,wk_up_f_wr_wk6, by = "athlete_name") |> relocate(team,.after = athlete_name) |> relocate(receiving_yds, .after = team) |> relocate('yds/att', .after = receiving_yds) |> relocate(targets, .after = 'yds/att') |> relocate(receiving_rec, .after = targets) |> relocate(drops, .after = receiving_rec) |> relocate(yards_after_catch, .after = 'yds/att') |> relocate(receiving_td, .after = drops) |> relocate(caught_percent, .after = receiving_td) |> relocate(contested_catch_rate, .after = caught_percent)  |> arrange(-receiving_yds) 
+opponent_wk6_wr <- cfbd_stats_game_advanced(year = 2023, week = 6) |> select(team,opponent)
+pff_wr_wk6_2 <- left_join(pff_wr_wk6_1,opponent_wk6_wr, by = "team") |> relocate(opponent, .after = team)
+#view(pff_wr_wk5_2)
+
+
+top_ten_wr_wk6_table <- pff_wr_wk6_2 |> dplyr::slice(1:10) |> select(-position) |> 
+  gt() |> gt_theme_538() |> cols_label( receiving_yds = "Yards", 'yds/att' = "Yards Per Rec", receiving_td = "TD",receiving_rec = "Receptions", team = "Team",opponent = "Opponent", first_downs = "First Downs", fumbles = "Fumbles", yards_after_catch = "YAC", caught_percent = "Catch %", contested_catch_rate = "Contested Catch %", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 WR's WEEK 6"), subtitle = "By Receiving Yards") |> opt_align_table_header(align = "center")
+top_ten_wr_wk6_table |> gtsave("WRs_wk6_final_new.png", vwidth = 1000, vheight = 5)
+top_ten_wr_wk6_table
+
+#view(pff_wr_wk3_2)
+
+#--------------------------------------------------------------------------------------------------------------------------
+pff_wk4_wr <- read_csv("~/Downloads/receiving_summary_wk4.csv") |> filter(receptions >= 4, position == "WR") |> rename(name = player) |> select(name,first_downs,fumbles,caught_percent,contested_catch_rate,drops,targets,yards_after_catch,team_name) 
+#view(pff_wk4_wr)
+wr_fix <- anti_join(pff_wk4_wr,wk_up_f_wr_wk4, by = "name")
+#view(wr_fix)
+pff_wr_wk4_1<- left_join(pff_wk4_wr,wk_up_f_wr_wk4, by = "name") |> relocate(team,.after = name) |> relocate(yds, .after = team) |> relocate('yds/att', .after = yds) |> relocate(targets, .after = 'yds/att') |> relocate(rec, .after = targets) |> relocate(drops, .after = rec) |> relocate(yards_after_catch, .after = 'yds/att') |> relocate(td, .after = drops) |> relocate(caught_percent, .after = td) |> relocate(contested_catch_rate, .after = caught_percent)  |> arrange(-yds) 
+opponent_wk4_wr <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent)
+pff_wr_wk4_2 <- left_join(pff_wr_wk4_1,opponent_wk4_wr, by = "team") |> relocate(opponent, .after = team)
+
+top_ten_wr_w4_table <- pff_wr_wk4_2 |> slice(1:10) |> select(-position,-team_name) |> 
+  gt() |> gt_theme_538() |> cols_label( yds = "Yards", 'yds/att' = "Yards Per Rec", td = "TD",rec = "Receptions", team = "Team",opponent = "Opponent", first_downs = "First Downs", fumbles = "Fumbles", yards_after_catch = "YAC", caught_percent = "Catch %", contested_catch_rate = "Contested Catch %") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 WR's WEEK 4"), subtitle = "By Receiving Yards") |> opt_align_table_header(align = "center")
+top_ten_wr_w4_table |> gtsave("WRs_wk4_final.png", vwidth = 1000, vheight = 5)
+top_ten_wr_w4_table
+
+```
+
+```{r}
+pff_wk6_te <- read_csv("~/Downloads/receiving_summary_wk6.csv") |> rename(athlete_name = player) |> filter(receptions > 2) |> filter(position == "TE") |>  select(athlete_name,first_downs,fumbles,caught_percent,contested_catch_rate,drops,targets,yards_after_catch,team_name) 
+#iew(pff_wk5_te)
+te_fix_6 <- anti_join(wk_up_f_te_wk6,pff_wk6_te, by = "athlete_name")
+view(te_fix_6)
+
+pff_te_wk6_1<- left_join(wk_up_f_te_wk6,pff_wk6_te, by = "athlete_name") |> relocate(team,.after = athlete_name) |> relocate(receiving_yds, .after = team) |> relocate('yds/att', .after = receiving_yds) |> relocate(targets, .after = 'yds/att') |> relocate(receiving_rec, .after = targets) |> relocate(drops, .after = receiving_rec) |> relocate(yards_after_catch, .after = 'yds/att') |> relocate(receiving_td, .after = drops) |> relocate(caught_percent, .after = receiving_td) |> relocate(contested_catch_rate, .after = caught_percent)  |> arrange(-receiving_yds) 
+opponent_wk6_te <- cfbd_stats_game_advanced(year = 2023, week = 6) |> select(team,opponent)
+pff_te_wk6_2 <- left_join(pff_te_wk6_1,opponent_wk6_te, by = "team") |> relocate(opponent, .after = team)
+#view(pff_te_wk6_2)
+#write_csv(pff_te_wk5_2, "fix_te.csv")
+
+top_ten_te_wk6_table <- pff_te_wk6_2 |> dplyr::slice(1:10) |> select(-position,-team_name) |> 
+  gt() |> gt_theme_538() |> cols_label( receiving_yds = "Yards", 'yds/att' = "Yards Per Rec", receiving_td = "TD",receiving_rec = "Receptions", team = "Team",opponent = "Opponent", first_downs = "First Downs", fumbles = "Fumbles", yards_after_catch = "YAC", caught_percent = "Catch %", contested_catch_rate = "Contested Catch %", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 TE's WEEK 6"), subtitle = "By Receiving Yards") |> opt_align_table_header(align = "center")
+top_ten_te_wk6_table |> gtsave("TEs_wk6_final_new.png", vwidth = 1000, vheight = 5)
+top_ten_te_wk6_table
+
+#view(pff_wr_wk3_2)
+
+#----------------------------------------------------------------------------------------------------------------------------------
+pff_wk4_te <- read_csv("~/Downloads/receiving_summary_wk4.csv") |> filter(receptions >= 3, position == "TE") |> rename(name = player) |> select(name,first_downs,fumbles,caught_percent,contested_catch_rate,drops,targets,yards_after_catch,team_name) 
+#view(pff_wk4_te)
+te_fix <- anti_join(pff_wk4_te,wk_up_f_te_wk4, by = "name")
+#view(te_fix)
+pff_te_wk4_1<- left_join(pff_wk4_te,wk_up_f_te_wk4, by = "name") |> relocate(team,.after = name) |> relocate(yds, .after = team) |> relocate('yds/att', .after = yds) |> relocate(targets, .after = 'yds/att') |> relocate(rec, .after = targets) |> relocate(drops, .after = rec) |> relocate(yards_after_catch, .after = 'yds/att') |> relocate(td, .after = drops) |> relocate(caught_percent, .after = td) |> relocate(contested_catch_rate, .after = caught_percent)  |> arrange(-yds) 
+opponent_wk4_te <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent)
+pff_te_wk4_2 <- left_join(pff_te_wk4_1,opponent_wk4_te, by = "team") |> relocate(opponent, .after = team)
+#view(pff_rb_wk4_2)
+
+top_ten_te_wk4_table <- pff_te_wk4_2 |> slice(1:10) |> select(-position,-team_name) |> 
+  gt() |> gt_theme_538() |> cols_label( yds = "Yards", 'yds/att' = "Yards Per Rec", td = "TD",rec = "Receptions", team = "Team",opponent = "Opponent", first_downs = "First Downs", fumbles = "Fumbles", yards_after_catch = "YAC", caught_percent = "Catch %", contested_catch_rate = "Contested Catch %") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 TE's WEEK 4"), subtitle = "By Receiving Yards") |> opt_align_table_header(align = "center")
+top_ten_te_wk4_table |> gtsave("TEs_wk4_final.png", vwidth = 1000, vheight = 5)
+top_ten_te_wk4_table
+
+```
+
+```{r}
+#library(fuzzyjoin)
+li
+#weekly_updates_def <-  cfbd_game_player_stats(year = 2023, week = 3, category = "defensive") 
+#view(weekly_updates_def)
+#pff_wk3_def <- read_csv("~/Downloads/defense_summary_wk3.csv")  |> rename(name = player) |> filter(position != "HB" & position != "WR" & position != "TE") 
+#|> filter(snap_counts_defense > 10)
+pff_wk6_de <- read_csv("~/Downloads/defense_summary_wk6_1.csv")  |> rename(athlete_name = player)
+#|> select(name,first_downs,fumbles,caught_percent,contested_catch_rate,drops,targets,yards_after_catch,team_name) 
+#view(pff_wk3_def)
+pff_wk6_de_1 <- left_join(pff_wk6_de, wk_up_f_de_tfl_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y)|> arrange(-defensive_tot) 
+#view(pff_wk6_de_1)
+
+pff_wk6_de_1_sacks <- left_join(pff_wk6_de, wk_up_f_de_tfl_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y) |> arrange(-defensive_sacks) 
+
+de_fix_wk6 <- anti_join(wk_up_f_de_tfl_wk6,pff_wk6_de_1)
+#view(de_fix_wk6)
+#def_fix_2 <- anti_join(wk_up_f_de_tfl_wk3,def_fix, by = "name")
+#view(def_fix_2)
+#view(pff_wk5_de_1)
+opponent_wk6_de <- cfbd_stats_game_advanced(year = 2023, week = 6) |> select(team,opponent) 
+#|> filter(!is.na(team))
+pff_de_wk6_2_sacks <- left_join(pff_wk6_de_1_sacks,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team) 
+pff_de_wk6_2 <- left_join(pff_wk6_de_1,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team) 
+#view(pff_de_wk3_2_sacks)
+
+#pff_de_wk3_2[is.na(pff_de_wk3_2)] <- "Georgia Tech" 
+
+#view(pff_de_wk3_2)
+
+top_ten_de_wk6_table <- pff_de_wk6_2 |> select(-position) |> slice(1:10)  |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DE's WEEK 6"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_de_wk6_table |> gtsave("DEs_wk6_final_4_new.png", vwidth = 1000, vheight = 5)
+top_ten_de_wk6_table
+
+top_ten_de_wk6_table_sacks <- pff_de_wk6_2_sacks |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DE's WEEK 6"), subtitle = "By Sacks") |> opt_align_table_header(align = "center")
+top_ten_de_wk6_table_sacks
+
+top_ten_de_wk6_table_sacks |> gtsave("DEs_wk_6_sacks_new.png", vwidth = 1000, vheight= 5)
+
+#----------------------------------------------------------------------------------------------------------------
+pff_wk4_de <- read_csv("~/Downloads/defense_summary_wk4.csv")  |> rename(name = player) 
+pff_wk4_de_1 <- left_join(pff_wk4_de, wk_up_f_de_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-tot) 
+#view(pff_wk4_de)
+opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_de_wk4_2 <- left_join(pff_wk4_de_1,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team) |> distinct(name, .keep_all = TRUE)
+
+#view(pff_de_wk4_2)
+de_fix_wk4 <- anti_join(wk_up_f_de_tfl_wk4,pff_wk4_de_1)
+#view(de_fix_wk4)
+
+top_ten_de_wk4_table <- pff_de_wk4_2 |> select(-position)|> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DE's WEEK 4"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_de_wk4_table |> gtsave("DEs_wk4_final_3.png", vwidth = 1000, vheight = 5)
+top_ten_de_wk4_table
+
+pff_wk4_de_1_sacks <- left_join(pff_wk4_de, wk_up_f_de_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-sacks) 
+
+pff_de_wk4_2_sacks <- left_join(pff_wk4_de_1_sacks,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team) |> distinct(name, .keep_all = TRUE)
+
+top_ten_de_wk4_table_sacks <- pff_de_wk4_2_sacks |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DE's WEEK 4"), subtitle = "By Sacks") |> opt_align_table_header(align = "center")
+top_ten_de_wk4_table_sacks |> gtsave("DEs_wk4_final_sacks.png", vwidth = 1000, vheight = 5)
+top_ten_de_wk4_table_sacks
+
+```
+
+
+
+```{r}
+pff_wk6_dl <- read_csv("~/Downloads/defense_summary_wk6_1.csv")  |> rename(athlete_name = player)
+pff_wk6_dl_1 <- left_join(pff_wk6_dl, wk_up_f_dl_tfl_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y)|> arrange(-defensive_tot) 
+#view(pff_wk3_dl_1)
+dl_fix_wk6 <- anti_join(wk_up_f_dl_tfl_wk6,pff_wk6_dl_1)
+view(dl_fix_wk6)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_dl_wk6_2 <- left_join(pff_wk6_dl_1,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team) 
+
+#pff_dl_wk3_2[is.na(pff_dl_wk3_2)] <- "Ole Miss" 
+
+#view(pff_dl_wk3_2)
+
+top_ten_dl_wk6_table <- pff_dl_wk6_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |>  cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")  |> tab_header(
+  title = md("Top 10 DL's WEEK 6"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_dl_wk6_table |> gtsave("DLs_wk6_final_4_new.png", vwidth = 1000, vheight = 5)
+top_ten_dl_wk6_table
+
+pff_wk6_dl_sacks <-left_join(pff_wk6_dl, wk_up_f_dl_tfl_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y) |> arrange(-defensive_sacks) 
+
+pff_dl_wk6_2_sacks <- left_join(pff_wk6_dl_sacks,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+
+top_ten_dl_wk6_table_sacks <- pff_dl_wk6_2_sacks |> select(-position)  |> slice(1:10)|> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")|> tab_header(
+  title = md("Top 10 DL's WEEK 6"), subtitle = "By Sacks") |> opt_align_table_header(align = "center")
+top_ten_dl_wk6_table_sacks |> gtsave("DLs_wk5_final_4_scks_new1.png", vwidth = 1000, vheight = 5)
+top_ten_dl_wk6_table_sacks
+
+#________________________________________________________________________________________________________
+
+pff_wk4_dl <- read_csv("~/Downloads/defense_summary_wk4.csv")  |> rename(name = player)
+pff_wk4_dl_1 <- left_join(pff_wk4_dl, wk_up_f_dl_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-tot) 
+dl_fix_wk4 <- anti_join(wk_up_f_dl_tfl_wk4,pff_wk4_dl_1)
+#view(dl_fix_wk4)
+#view(pff_wk4_dl_1)
+opponent_wk4_dl <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_dl_wk4_2 <- left_join(pff_wk4_dl_1,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_dl_wk4_2)
+
+top_ten_dl_wk4_table <- pff_dl_wk4_2 |> select(-position)|> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DL's WEEK 4"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_dl_wk4_table |> gtsave("DLs_wk4_final_4.png", vwidth = 1000, vheight = 5)
+top_ten_dl_wk4_table
+
+pff_wk4_dl_sacks <- left_join(pff_wk4_dl, wk_up_f_dl_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-sacks) |> filter(sacks > 0 )
+#view(pff_wk4_dl_sacks)
+pff_dl_wk4_2_sacks <- left_join(pff_wk4_dl_sacks,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+top_ten_dl_wk4_table_sacks <- pff_dl_wk4_2_sacks |> select(-position) |> slice(1:10)|> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DL's WEEK 4"),subtitle = "By Sacks") |> opt_align_table_header(align = "center")
+top_ten_dl_wk4_table_sacks |> gtsave("DLs_wk4_final_4_sacks.png", vwidth = 1000, vheight = 5)
+top_ten_dl_wk4_table_sacks
+
+```
+
+
+```{r}
+pff_wk6_dt <- read_csv("~/Downloads/defense_summary_wk6_1.csv")  |> rename(athlete_name = player)
+pff_wk6_dt_1 <- left_join(pff_wk6_dt, wk_up_f_dt_tfl_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y)|> arrange(-defensive_tot) 
+#view(pff_wk3_dt_1)
+dt_fix_wk6 <- anti_join(wk_up_f_dt_tfl_wk6,pff_wk6_dt_1)
+#view(dt_fix_wk6)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_dt_wk6_2 <- left_join(pff_wk6_dt_1,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+#pff_dt_wk3_2[is.na(pff_dt_wk3_2)] <- "Georgia Tech" 
+#view(pff_dl_wk3_2)
+
+top_ten_dt_wk6_table <- pff_dt_wk6_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")  |> tab_header(
+  title = md("Top 10 DT's WEEK 6"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_dt_wk6_table |> gtsave("DTs_wk5_final_4_new.png", vwidth = 1000, vheight = 5)
+top_ten_dt_wk6_table
+
+pff_wk6_dt_sacks <- left_join(pff_wk6_dt, wk_up_f_dt_scks_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y) |> arrange(-defensive_sacks) 
+
+pff_dt_wk6_2_sacks <- left_join(pff_wk6_dt_sacks,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+
+top_ten_dt_wk6_table_sacks <- pff_dt_wk6_2_sacks |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")  |> tab_header(
+  title = md("Top 10 DT's WEEK 6"), subtitle = "By Sacks") |> opt_align_table_header(align = "center")
+top_ten_dt_wk6_table_sacks |> gtsave("DTs_wk5_final_3_sacks_new.png", vwidth = 1000, vheight = 5)
+top_ten_dt_wk6_table_sacks
+#----------------------------------------------------------------------------------------------------------
+pff_wk4_dt <- read_csv("~/Downloads/defense_summary_wk4.csv")  |> rename(name = player)
+pff_wk4_dt_1 <- left_join(pff_wk4_dt, wk_up_f_dt_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-tot) 
+dt_fix_wk4 <- anti_join(wk_up_f_dt_tfl_wk4,pff_wk4_dt_1)
+#view(dt_fix_wk4)
+#view(pff_wk4_dt_1)
+opponent_wk4_dl <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_dt_wk4_2 <- left_join(pff_wk4_dt_1,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_dl_wk4_2)
+
+top_ten_dt_wk4_table <- pff_dt_wk4_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DT's WEEK 4"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_dt_wk4_table |> gtsave("DTs_wk4_final_4_final_new.png", vwidth = 1000, vheight = 5)
+top_ten_dt_wk4_table
+
+pff_wk4_dt_sacks <- left_join(pff_wk4_dt, wk_up_f_dt_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-sacks) |> filter(sacks > 0)
+
+pff_dt_wk4_2_sacks <- left_join(pff_wk4_dt_sacks,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team) 
+
+top_ten_dt_wk4_table_sacks <- pff_dt_wk4_2_sacks |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DT's WEEK 4"), subtitle = "By Sacks") |> opt_align_table_header(align = "center")
+top_ten_dt_wk4_table_sacks |> gtsave("DTs_wk4_final_4_sacks.png", vwidth = 1000, vheight = 5)
+top_ten_dt_wk4_table_sacks
+
+```
+
+
+```{r}
+pff_wk6_lb <- read_csv("~/Downloads/defense_summary_wk6_1.csv")  |> rename(athlete_name = player) 
+pff_wk6_lb_1 <- left_join(pff_wk6_lb, wk_up_f_lb_tfl_wk6_1, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_sacks,forced_fumbles,hits,hurries) |> rename(position = position.y)|> arrange(-defensive_tot) 
+#view(pff_wk3_dt_1)
+lb_fix_wk6 <- anti_join(wk_up_f_lb_tfl_wk6_1,pff_wk6_lb_1)
+#view(lb_fix_wk6)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_lb_wk6_2 <- left_join(pff_wk6_lb_1,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team) 
+
+#view(pff_wk3_lb_1)
+
+top_ten_lb_wk6_table <- pff_lb_wk6_2 |> select(-position) |> slice(1:10)|> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL", defensive_sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")  |> tab_header(
+  title = md("Top 10 LB's WEEK 6"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_lb_wk6_table |> gtsave("LBs_wk6_final_new1.png", vwidth = 1000, vheight = 5)
+top_ten_lb_wk6_table
+
+pff_wk3_lb_hurries <- left_join(wk_up_2_def, pff_wk3_lb_hurries_check, by = "name") |> filter(!is.na(team)) 
+#|> select(name,position,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(sacks = sacks.y) |> arrange(-hurries) |> filter(hurries > 0) 
+#view(pff_wk3_lb_hurries)
+pff_wk6_lb_hurries <- read_csv("~/Downloads/defense_summary_wk6_1.csv")  |> rename(name = player) |> select(name,team_name,hurries,position) |> filter(hurries > 0) |> filter(position %in% c("LB","ED")) |> arrange(-hurries) |> slice(1:10) |> rename(team = team_name)
+ # clean_school_names(pff_wk4_lb_hurries_check$team)
+
+#view(opponent_wk3_de)
+
+pff_lb_wk6_2_hurries <- left_join(pff_wk6_lb_hurries,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+#b_fix_wk3_hur <- anti_join(wk_up_)
+
+top_ten_lb_wk6_table_hurries <- pff_lb_wk6_2_hurries|> 
+  gt() |> gt_theme_538() |> cols_label(team = "Team",opponent = "Opponent") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 LB's WEEK 6"), subtitle = "By Hurries") |> opt_align_table_header(align = "center")
+top_ten_lb_wk6_table_hurries |> gtsave("LBs_wk6_final_5_hurries_new.png", vwidth = 1000, vheight = 5)
+top_ten_lb_wk6_table_hurries
+
+#-----------------------------------------------------------------------------------
+pff_wk4_lb <- read_csv("~/Downloads/defense_summary_wk4.csv")  |> rename(name = player)
+pff_wk4_lb_1 <- left_join(pff_wk4_lb, wk_up_f_lb_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |>  arrange(-tot)
+#view(pff_wk3_dt_1)
+lb_fix_wk4 <- anti_join(wk_up_f_lb_tfl_wk4,pff_wk4_lb_1)
+view(lb_fix_wk4)
+opponent_wk5_lb <- cfbd_stats_game_advanced(year = 2023, week = 5) |> select(team,opponent) 
+pff_lb_wk4_2 <- left_join(pff_wk4_lb_1,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+valid_team_names(division = "FCS")
+
+#view(pff_wk4_lb_1)
+
+top_ten_lb_wk4_table <- pff_lb_wk4_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL", sacks = "Sacks",forced_fumbles = "Forced Fumbles", hits = "Hits", hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 LB's WEEK 4"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_lb_wk4_table |> gtsave("LBs_wk4_final_3_new.png", vwidth = 1000, vheight = 5)
+top_ten_lb_wk4_table
+
+pff_wk4_lb_hurries <- left_join(pff_wk4_lb, wk_up_f_lb_tfl_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,sacks.y,forced_fumbles,hits,hurries) |> rename(position = position.y) |> rename(sacks = sacks.y) |> arrange(-hurries)
+
+pff_wk4_lb_hurries_check <- read_csv("~/Downloads/defense_summary_wk4.csv")  |> rename(name = player) |> select(name,team_name,hurries,position) |> filter(hurries > 0) |> filter(position %in% c("LB","ED")) |> arrange(-hurries) |> slice(1:10) |> rename(team = team_name)
+#view(pff_wk4_lb_hurries_check)
+pff_lb_wk4_2_hurries <- left_join(pff_wk4_lb_hurries_check,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+top_ten_lb_wk4_table_hurries <- pff_lb_wk4_2_hurries |> 
+  gt() |> gt_theme_538() |> cols_label( team = "Team",opponent = "Opponent",hurries = "Hurries") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 LB's WEEK 4"), subtitle = "By Hurries") |> opt_align_table_header(align = "center")
+top_ten_lb_wk4_table_hurries |> gtsave("LBs_wk4_final_3_hurries_new.png", vwidth = 1000, vheight = 5)
+top_ten_lb_wk4_table_hurries
+
+```
+
+```{r}
+pff_wk6_db <- read_csv("~/Downloads/defense_coverage_scheme_wk6_2.csv")  |> rename(athlete_name = player)
+pff_wk6_db_1 <- left_join(pff_wk6_db, wk_up_f_db_tot_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-defensive_tot)
+#view(pff_wk3_db_1)
+db_fix_wk6 <- anti_join(wk_up_f_db_tot_wk6,pff_wk6_db_1)
+view(db_fix_wk6)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_db_wk6_2 <- left_join(pff_wk6_db_1,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_wk3_db_1)
+
+top_ten_db_wk6_table <- pff_db_wk6_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL",defensive_pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DB's WEEK 6"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_db_wk6_table |> gtsave("DBs_wk6_final_3.png", vwidth = 1000, vheight = 5)
+top_ten_db_wk6_table
+
+pff_wk6_db_pd <- read_csv("~/Downloads/defense_coverage_scheme_wk6_2.csv")  |> rename(athlete_name = player)
+pff_wk6_db_1_pd <- left_join(pff_wk6_db_pd, wk_up_f_db_pd_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-defensive_pd)
+#view(pff_wk3_db_1)
+db_fix_wk6_pd <- anti_join(wk_up_f_db_pd_wk6,pff_wk6_db_1_pd)
+view(db_fix_wk6_pd)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_db_wk6_2_pd <- left_join(pff_wk6_db_1_pd,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_wk3_db_1)
+
+top_ten_db_wk6_table_pd <- pff_db_wk6_2_pd |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL",defensive_pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")|> tab_header(
+  title = md("Top 10 DB's WEEK 6"), subtitle = "By Passes Defended") |> opt_align_table_header(align = "center")
+top_ten_db_wk6_table_pd |> gtsave("DBs_wk6_final_new_pd.png", vwidth = 1000, vheight = 5)
+top_ten_db_wk6_table_pd
+
+#----------------------------------------------------------------------------------------------------------
+
+pff_wk4_db <- read_csv("~/Downloads/defense_coverage_scheme_wk4.csv")  |> rename(name = player)
+pff_wk4_db_1 <- left_join(pff_wk4_db, wk_up_f_db_tot_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-tot)
+#view(pff_wk4_db_1)
+db_fix_wk4 <- anti_join(wk_up_f_db_tot_wk4,pff_wk4_db_1)
+#view(db_fix_wk4)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_db_wk4_2 <- left_join(pff_wk4_db_1,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team) 
+
+#view(pff_wk4_db_1)
+
+top_ten_db_wk4_table <- pff_db_wk4_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL",pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DB's WEEK 4"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_db_wk4_table |> gtsave("DBs_wk4_final_3.png", vwidth = 1000, vheight = 5)
+top_ten_db_wk4_table
+
+pff_wk4_db_pd <- read_csv("~/Downloads/defense_coverage_scheme_wk4.csv")  |> rename(name = player)
+pff_wk4_db_1_pd <- left_join(pff_wk4_db_pd, wk_up_f_db_pd_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-pd)
+#view(pff_wk3_db_1)
+db_fix_wk4_pd <- anti_join(wk_up_f_db_pd_wk4,pff_wk4_db_1_pd)
+#view(db_fix_wk4_pd)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_db_wk4_2_pd <- left_join(pff_wk4_db_1_pd,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team) 
+
+#view(pff_wk3_db_1)
+
+top_ten_db_wk4_table_pd <- pff_db_wk4_2_pd |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL",pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 DB's WEEK 4"), subtitle = "By Passes Defended") |> opt_align_table_header(align = "center")
+top_ten_db_wk4_table_pd |> gtsave("DBs_wk4_final_3_pd.png", vwidth = 1000, vheight = 5)
+top_ten_db_wk4_table_pd
+
+```
+
+
+```{r}
+pff_wk6_s <- read_csv("~/Downloads/defense_coverage_scheme_wk6_2.csv")  |> rename(athlete_name = player)
+pff_wk6_s_1 <- left_join(pff_wk6_s, wk_up_f_s_tot_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-defensive_tot)
+#view(pff_wk3_s_1)
+s_fix_wk6 <- anti_join(wk_up_f_s_tot_wk6,pff_wk6_s_1)
+view(s_fix_wk6)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_s_wk6_2 <- left_join(pff_wk6_s_1,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team)
+
+#pff_s_wk3_2[is.na(pff_s_wk3_2)] <- "Georgia Tech" 
+#view(pff_wk3_s_1)
+
+top_ten_s_wk6_table <- pff_s_wk6_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL",defensive_pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 S's WEEK 6"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_s_wk6_table |> gtsave("Ss_wk5_final_3_new.png", vwidth = 1000, vheight = 5)
+top_ten_s_wk6_table
+
+pff_wk6_s_pd <- read_csv("~/Downloads/defense_coverage_scheme_wk6_2.csv")  |> rename(athlete_name = player)
+pff_wk6_s_1_pd <- left_join(pff_wk6_s_pd, wk_up_f_s_pd_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-defensive_pd)
+#view(pff_wk3_db_1)
+s_fix_wk6_pd <- anti_join(wk_up_f_s_pd_wk6,pff_wk6_s_1_pd)
+#view(s_fix_wk6_pd)
+opponent_wk6_s <- cfbd_stats_game_advanced(year = 2023, week = 6) |> select(team,opponent) 
+pff_s_wk6_2_pd <- left_join(pff_wk6_s_1_pd,opponent_wk6_s, by = "team") |> relocate(opponent, .after = team) 
+#view(pff_s_wk5_2_pd)
+#pff_s_wk5_3_pd <-   clean_school_names(pff_s_wk5_2_pd$team) |> slice(1:10)
+#pff_s_wk5_3_pd
+#view(pff_wk3_db_1)
+
+top_ten_s_wk6_table_pd <- pff_s_wk6_2_pd |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL",defensive_pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 S's WEEK 6"), subtitle = "By Passes Defended") |> opt_align_table_header(align = "center")
+top_ten_s_wk6_table_pd |> gtsave("Ss_wk5_final_3_pd_new.png", vwidth = 1000, vheight = 5)
+top_ten_s_wk6_table_pd
+
+#----------------------------------------------------------------------------------------------------------
+
+pff_wk4_s <- read_csv("~/Downloads/defense_coverage_scheme_wk4.csv")  |> rename(name = player)
+pff_wk4_s_1 <- left_join(pff_wk4_s, wk_up_f_s_tot_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-tot)
+#view(pff_wk4_s_1)
+s_fix_wk4 <- anti_join(wk_up_f_s_tot_wk4,pff_wk4_s_1)
+#view(s_fix_wk4)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_s_wk4_2 <- left_join(pff_wk4_s_1,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_wk4_db_1)
+
+top_ten_s_wk4_table <- pff_s_wk4_2 |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL",pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 S's WEEK 4"), subtitle = "By Total Tackles") |> opt_align_table_header(align = "center")
+top_ten_s_wk4_table |> gtsave("Ss_wk4_final_3.png", vwidth = 1000, vheight = 5)
+top_ten_s_wk4_table
+
+pff_wk4_s_pd <- read_csv("~/Downloads/defense_coverage_scheme_wk4.csv")  |> rename(name = player)
+pff_wk4_s_1_pd <- left_join(pff_wk4_s_pd, wk_up_f_s_pd_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-pd)
+#view(pff_wk3_db_1)
+s_fix_wk4_pd <- anti_join(wk_up_f_s_pd_wk4,pff_wk4_s_1_pd)
+#view(s_fix_wk4_pd)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_s_wk4_2_pd <- left_join(pff_wk4_s_1_pd,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_wk3_db_1)
+
+top_ten_s_wk4_table_pd <- pff_s_wk4_2_pd |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL",pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone") |> 
+  gt_fmt(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 S's WEEK 4"), subtitle = "By Passes Defended") |> opt_align_table_header(align = "center")
+top_ten_s_wk4_table_pd |> gtsave("Ss_wk4_final_3_new_pd.png", vwidth = 1000, vheight = 5)
+top_ten_s_wk4_table_pd
+
+```
+
+
+```{r}
+pff_wk6_cb_pd <- read_csv("~/Downloads/defense_coverage_scheme_wk6_2.csv")  |> rename(athlete_name = player)
+pff_wk6_cb_1_pd <- left_join(pff_wk6_cb_pd, wk_up_f_cb_pd_wk6, by = "athlete_name") |> filter(!is.na(team)) |> select(athlete_name,position.y,team,defensive_tot,defensive_solo,defensive_tfl,defensive_pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-defensive_pd)
+#view(pff_wk3_db_1)
+cb_fix_wk6_pd <- anti_join(wk_up_f_cb_pd_wk6,pff_wk6_cb_1_pd)
+view(cb_fix_wk6_pd)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_cb_wk6_2_pd <- left_join(pff_wk6_cb_1_pd,opponent_wk6_de, by = "team") |> relocate(opponent, .after = team) 
+
+#view(pff_wk3_db_1)
+
+top_ten_cb_wk6_table_pd <- pff_cb_wk6_2_pd |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |>  cols_label( defensive_tot = "Total Tackles", team = "Team",opponent = "Opponent", defensive_solo = "Solo Tackles", defensive_tfl = "TFL",defensive_pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone", athlete_name = "Name") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF")|> tab_header(
+  title = md("Top 10 CB's WEEK 6"), subtitle = "By Passes Defended") |> opt_align_table_header(align = "center")
+top_ten_cb_wk6_table_pd |> gtsave("CBs_wk5_final_3.png", vwidth = 1000, vheight = 5)
+top_ten_cb_wk6_table_pd
+
+#----------------------------------------------------------------------------------------------------
+pff_wk4_cb_pd <- read_csv("~/Downloads/defense_coverage_scheme_wk4.csv")  |> rename(name = player)
+pff_wk4_cb_1_pd <- left_join(pff_wk4_cb_pd, wk_up_f_cb_pd_wk4, by = "name") |> filter(!is.na(team)) |> select(name,position.y,team,tot,solo,tfl,pd,man_snap_counts_coverage_percent,man_qb_rating_against,zone_snap_counts_coverage_percent,zone_qb_rating_against) |> rename(position = position.y) |>  arrange(-pd)
+#view(pff_wk3_db_1)
+cb_fix_wk4_pd <- anti_join(wk_up_f_cb_pd_wk4,pff_wk4_cb_1_pd)
+#view(cb_fix_wk4_pd)
+#opponent_wk4_de <- cfbd_stats_game_advanced(year = 2023, week = 4) |> select(team,opponent) 
+pff_cb_wk4_2_pd <- left_join(pff_wk4_cb_1_pd,opponent_wk4_de, by = "team") |> relocate(opponent, .after = team)
+
+#view(pff_wk3_db_1)
+
+top_ten_cb_wk4_table_pd <- pff_cb_wk4_2_pd |> select(-position) |> slice(1:10) |> 
+  gt() |> gt_theme_538() |> cols_label( tot = "Total Tackles", team = "Team",opponent = "Opponent", solo = "Solo Tackles", tfl = "TFL",pd = "Passes Defended", man_snap_counts_coverage_percent = "Man Coverage %",man_qb_rating_against = "QB Rating in Man",zone_snap_counts_coverage_percent = "Zone Coverage %", zone_qb_rating_against = "QB Rating in Zone") |> 
+  gt_fmt_cfb_logo(columns = c("team","opponent"), height = 45) |> 
+  cols_align(align = "center")|> tab_source_note(source_note = "@AlexFeazelle | Source: @cfbfastR | @PFF") |> tab_header(
+  title = md("Top 10 CB's WEEK 4"), subtitle = "By Passes Defended") |> opt_align_table_header(align = "center")
+top_ten_cb_wk4_table_pd |> gtsave("CBs_wk4_final_3_pd.png", vwidth = 1000, vheight = 5)
+top_ten_cb_wk4_table_pd
+
+```
+```{r}
+#week 3 slack csv send. 
+pff_qb_wk3 <- QB_wk_3 |> select(-position,-team.y,-avg_PPA_all,-avg_PPA_rush, -week, -season) |> rename(team = team.x) |> rename(yards = yds.y) |> rename(att = att.y) |> rename(comp = comp.y) |> relocate(opponent,.after = team)
+
+#view(pff_cfbfastR_qb_wk3)
+pff_qb_wk4 <- QB_wk_4 |> select(-position,-team.y,-avg_PPA_all,-avg_PPA_rush,-week,-season) |> rename(team = team.x) |> rename(yards = yds.y) |> rename(att = att.y) |> rename(comp = comp.y) |> relocate(opponent,.after = team)
+
+#view(pff_cfbfastR_qb_wk4)
+
+pff_rb_wk3_csv <- pff_rb_wk3_2 |> relocate(opponent,.after = team)
+pff_rb_wk4_csv <- pff_rb_wk4_2 |> relocate(opponent,.after = team)
+
+#view(pff_rb_wk3_csv)
+#view(pff_rb_wk4_csv)
+
+pff_wr_wk3_csv <- pff_wr_wk3_2 |> select(-position)
+pff_wr_wk4_csv <- pff_wr_wk4_2 |> select(-position,-team_name)
+
+#view(pff_wr_4_csv)
+
+pff_te_wk3_csv <- pff_te_wk3_2 |> select(-position,-team_name)
+pff_te_wk4_csv <- pff_te_wk4_2 |> select(-position,-team_name)
+
+#view(pff_te_4_csv)
+
+
+pff_de_wk3_csv <- pff_de_wk3_2 |> select(-position)
+pff_de_wk3_sacks_csv<- pff_de_wk3_2_sacks |> select(-position)
+#view(pff_de_wk3_sacks_csv)
+pff_de_wk4_csv<- pff_de_wk4_2 |> select(-position)
+pff_de_wk4_sacks_csv<- pff_de_wk4_2_sacks |> select(-position)
+#view(pff_de_wk4_sacks_csv)
+
+pff_dt_wk3_csv<- pff_dt_wk3_2 |> select(-position)
+pff_dt_wk3_sacks_csv<- pff_dt_wk3_2_sacks |> select(-position)
+#view(pff_dt_wk3_sacks_csv)
+pff_dt_wk4_csv<- pff_dt_wk4_2 |> select(-position)
+pff_dt_wk4_sacks_csv<- pff_dt_wk4_2_sacks |> select(-position)
+#view(pff_dt_wk4_sacks_csv)
+
+pff_dl_wk3_csv<- pff_dl_wk3_2 |> select(-position)
+pff_dl_wk3_sacks_csv<- pff_dl_wk3_2_sacks |> select(-position)
+#view(pff_dl_wk3_sacks_csv)
+pff_dl_wk4_csv<- pff_dl_wk4_2 |> select(-position)
+pff_dl_wk4_sacks_csv<- pff_dl_wk4_2_sacks |> select(-position)
+#view(pff_dl_wk4_sacks_csv)
+
+pff_lb_wk3_csv<- pff_lb_wk3_2 |> select(-position)
+#pff_lb_wk3_hurries_csv<- pff_lb_wk3_2_hurries |> select(-position)
+pff_lb_wk4_csv<- pff_lb_wk4_2 |> select(-position)
+#pff_lb_wk4_hurries_csv<- pff_lb_wk4_2_hurries |> select(-position)
+#view(pff_lb_wk4_csv)
+
+pff_db_wk3_csv<- pff_db_wk3_2 |> select(-position)
+pff_db_wk3_pd_csv<- pff_db_wk3_2_pd |> select(-position)
+#view(pff_db_wk3_pd_csv)
+pff_db_wk4_csv<- pff_db_wk4_2 |> select(-position)
+pff_db_wk4_pd_csv<- pff_db_wk4_2_pd |> select(-position)
+#view(pff_db_wk4_pd_csv)
+
+pff_s_wk3_csv<- pff_s_wk3_2 |> select(-position)
+pff_s_wk3_pd_csv<- pff_s_wk3_2_pd |> select(-position)
+#view(pff_s_wk3_pd_csv)
+pff_s_wk4_csv<- pff_s_wk4_2 |> select(-position)
+pff_s_wk4_pd_csv<- pff_s_wk4_2_pd |> select(-position)
+#view(pff_s_wk4_pd_csv)
+
+pff_cb_wk3_pd_csv<- pff_cb_wk3_2_pd |> select(-position)
+pff_cb_wk4_pd_csv<- pff_cb_wk4_2_pd |> select(-position)
+#view(pff_cb_wk4_pd_csv)
+
+
+#slackr::slackr_csv(pff_qb_wk3,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (QBs)",
+  #                 initial_comment = "week 3 QB's (with select PFF Premium Stats)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_qb_wk4,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (QBs)",
+                   initial_comment = "week 4 QB's (with select PFF Premium Stats)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_rb_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (RBs)",
+  #                 initial_comment = "week 3 RB's (with select PFF Premium Stats)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_rb_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (RBs)",
+                   initial_comment = "week 4 RB's (with select PFF Premium Stats)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_wr_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (WRs)",
+  #                 initial_comment = "week 3 WR's (with select PFF Premium Stats)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_wr_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (WRs)",
+                   initial_comment = "week 4 WR's (with select PFF Premium Stats)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_te_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (TEs)",
+  #                 initial_comment = "week 3 TE's (with select PFF Premium Stats)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_te_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (TEs)",
+                   initial_comment = "week 4 TE's (with select PFF Premium Stats)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_de_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DEs)",
+  #                 initial_comment = "week 3 DE's (with select PFF Premium Stats, arranged by total tackles)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_de_wk3_sacks_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DEs)",
+  #                 initial_comment = "week 3 DE's (with select PFF Premium Stats, arranged by sacks)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_de_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DEs)",
+                   initial_comment = "week 4 DE's (with select PFF Premium Stats,arranged by total tackles)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_de_wk4_sacks_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DEs)",
+                   initial_comment = "week 4 DE's (with select PFF Premium Stats, arranged by sacks)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_dt_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DTs)",
+  #                 initial_comment = "week 3 DT's (with select PFF Premium Stats,arranged by total tackles)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_dt_wk3_sacks_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DTs)",
+  #                 initial_comment = "week 3 DT's (with select PFF Premium Stats, arranged by sacks)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_dt_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DTs)",
+                   initial_comment = "week 4 DT's (with select PFF Premium Stats,arranged by total tackles)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_dt_wk4_sacks_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DTs)",
+                   initial_comment = "week 4 DT's (with select PFF Premium Stats, arranged by sacks)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_dl_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DLs)",
+  #                 initial_comment = "week 3 DL's (with select PFF Premium Stats,arranged by total tackles)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_dl_wk3_sacks_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DLs)",
+  #                 initial_comment = "week 3 DL's (with select PFF Premium Stats, arranged by sacks)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_dl_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DLs)",
+                   initial_comment = "week 4 DL's (with select PFF Premium Stats,arranged by total tackles)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_dl_wk4_sacks_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DLs)",
+                   initial_comment = "week 4 DL's (with select PFF Premium Stats, arranged by sacks)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_lb_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (LBs)",
+  #                 initial_comment = "week 3 LB's (with select PFF Premium Stats,arranged by total tackles)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_lb_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (LBs)",
+                   initial_comment = "week 4 LB's (with select PFF Premium Stats,arranged by total tackles)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_db_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DBs)",
+  #                 initial_comment = "week 3 DB's (with select PFF Premium Stats,arranged by total tackles)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_db_wk3_pd_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (DBs)",
+  #                 initial_comment = "week 3 DB's (with select PFF Premium Stats,arranged by passes defended)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_db_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DBs)",
+                   initial_comment = "week 4 DB's (with select PFF Premium Stats,arranged by total tackles)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_db_wk4_pd_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (DBs)",
+                   initial_comment = "week 4 DB's (with select PFF Premium Stats,arranged by passes defended)",
+                   channels = "scouting",
+                token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_s_wk3_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (Ss)",
+  #                 initial_comment = "week 3 S's (with select PFF Premium Stats,arranged by total tackles)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_s_wk3_pd_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (Ss)",
+  #                 initial_comment = "week 3 S's (with select PFF Premium Stats,arranged by passes defended)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_s_wk4_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (Ss)",
+                   initial_comment = "week 4 S's (with select PFF Premium Stats,arranged by total tackles)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_s_wk4_pd_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (Ss)",
+                   initial_comment = "week 4 S's (with select PFF Premium Stats,arranged by passes defended)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+#slackr::slackr_csv(pff_cb_wk3_pd_csv,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 3 2023 (CBs)",
+  #                 initial_comment = "week 3 CB's (with select PFF Premium Stats,arranged by passes defended)",
+   #                channels = "scouting",
+    #              token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+slackr::slackr_csv(pff_cb_wk4_pd_csv,filename = tempfile(fileext = ".csv"),
+                   title = "week 4 2023 (CBs)",
+                  initial_comment = "week 4 CB's (with select PFF Premium Stats,arranged by passes defended)",
+                   channels = "scouting",
+                  token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+
+```
+

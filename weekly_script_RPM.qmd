@@ -1,0 +1,447 @@
+---
+title: "weekly_script"
+format: pdf
+---
+
+```{r}
+
+library(cfbfastR)
+library(tidyverse)
+library(stringr)
+#max_week <- cfbd_calendar(2023) |> filter(season_type == "regular", week == min(week))
+#max_week$week
+
+#load the stats function to filter for QB
+weekly_updates <-  cfbd_game_player_stats(year = 2023, week = 7, category = "passing")
+#view(weekly_updates)
+#wk_up_2 <- weekly_updates |> mutate(comp = word(weekly_updates$c_att, 1, sep="/"))
+#wk_up_3 <- wk_up_2 |> mutate(att = word(weekly_updates$c_att, 2, sep="/"))
+wk_up_4 <- weekly_updates |> filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                                               "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12")) |>  select(athlete_name,passing_attempts,passing_yds,passing_avg,passing_td,passing_int,team,passing_qbr,passing_completions) 
+wk_up_5_1_wk7 <- wk_up_4 |> arrange(-passing_avg) |> filter(passing_attempts >= 12) |> 
+  select(-passing_qbr) |> rename('yds/att' = 'passing_avg')
+#view(weekly_updates)
+view(wk_up_5_1_wk7)
+```
+
+```{r}
+#load the stats function to filter for RB
+weekly_updates_rb <-  cfbd_game_player_stats(year = 2023, week = 6, category = "rushing") |>  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+rb_pos_wk6 <- cfbd_team_roster(year = 2023) |> filter(position == "RB") |> select('athlete_id','position')
+rb_pos_wk6$athlete_id <- as.numeric(as.character(rb_pos_wk6$athlete_id )) 
+rb_weekly_updates_wk6 <- right_join(weekly_updates_rb,rb_pos_wk6,by = "athlete_id")
+##view(rb_weekly_updates)
+#view(rb_weekly_updates_wk5)
+##view(rb_pos)
+wk_up_2_rb <- rb_weekly_updates_wk6 |> select(athlete_name,team,position,rushing_yds,rushing_avg,rushing_car,rushing_td)
+##view(wk_up_2_rb)
+#wk_up_2_rb$yds <- as.numeric(as.character(wk_up_2_rb$yds)) 
+#wk_up_2_rb$avg <- as.numeric(as.character(wk_up_2_rb$avg))
+#wk_up_2_rb$car <- as.integer(as.character(wk_up_2_rb$car)) 
+#wk_up_2_rb$td <- as.integer(as.character(wk_up_2_rb$td)) 
+
+#str(wk_up_4$comp)
+##view(wk_up_2_rb)
+wk_up_f_rb_wk6 <- wk_up_2_rb |> arrange(-rushing_yds) |> filter(rushing_car >= 8) |> rename('yds/att' = 'rushing_avg')
+
+view(wk_up_f_rb_wk6)
+#fbd_conferences()
+#slackr::slackr_csv(wk_up_f_rb_1,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 rbs ",
+  #                 initial_comment = "WK 2 RBs (arranged by yards per attempt)",
+   #                channels = "#scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+```{r}
+
+#load the stats function to filter for WR
+weekly_updates_wr <-  cfbd_game_player_stats(year = 2023, week = 6, category = "receiving") |>  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_wr)
+wr_pos_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "WR") |> select('athlete_id','position')
+wr_pos_wk5$athlete_id <- as.numeric(as.character(wr_pos_wk5$athlete_id )) 
+##view(wr_pos)
+wr_weekly_updates_wk5 <- right_join(weekly_updates_wr,wr_pos_wk5,by = "athlete_id")
+view(wr_weekly_updates_wk5)
+##view(weekly_updates_rb)
+##view(rb_pos)
+wk_up_2_wr <- wr_weekly_updates_wk5 |> select(athlete_name,team,position,receiving_yds,receiving_avg,receiving_rec,receiving_td)
+##view(wk_up_2_wr)
+#wk_up_2_wr$yds <- as.numeric(as.character(wk_up_2_wr$yds)) 
+#wk_up_2_wr$avg <- as.numeric(as.character(wk_up_2_wr$avg))
+#wk_up_2_wr$rec <- as.integer(as.character(wk_up_2_wr$rec)) 
+#wk_up_2_wr$td <- as.integer(as.character(wk_up_2_wr$td)) 
+
+#str(wk_up_4$comp)
+##view(wk_up_2_rb)
+wk_up_f_wr_wk6 <- wk_up_2_wr |> arrange(-receiving_yds) |> filter(receiving_rec >= 4) |> rename('yds/att' = 'receiving_avg')
+view(wk_up_f_wr_wk6)
+
+#slackr::slackr_csv(wk_up_f_wr,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 WRs ",
+  #                 initial_comment = "WK 2 WRs (arranged by yards)",
+   #                channels = "#scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+
+
+```
+
+```{r}
+
+#load the stats function to filter for TE
+weekly_updates_te <-  cfbd_game_player_stats(year = 2023, week = 6, category = "receiving") |>  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_te)
+te_pos_wk6 <- cfbd_team_roster(year = 2023) |> filter(position == "TE") |> 
+select('athlete_id','position')
+##view(wr_pos)
+#te_pos_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "TE") |> select('athlete_id','position')
+te_pos_wk6$athlete_id <- as.numeric(as.character(te_pos_wk6$athlete_id )) 
+##view(wr_pos)
+te_weekly_updates_wk6 <- right_join(weekly_updates_te,te_pos_wk6,by = "athlete_id")
+#view(te_weekly_updates_wk5)
+##view(weekly_updates_rb)
+##view(rb_pos)
+te_up_2_wk6 <- te_weekly_updates_wk6 |> select(athlete_name,team,position,receiving_yds,receiving_avg,receiving_rec,receiving_td)
+##view(wk_up_2_wr)
+#wk_up_2_te$yds <- as.numeric(as.character(wk_up_2_te$yds)) 
+#wk_up_2_te$avg <- as.numeric(as.character(wk_up_2_te$avg))
+#wk_up_2_te$rec <- as.integer(as.character(wk_up_2_te$rec)) 
+#wk_up_2_te$td <- as.integer(as.character(wk_up_2_te$td)) 
+#str(wk_up_4$comp)
+##view(wk_up_2_rb)
+wk_up_f_te_wk6 <- te_up_2_wk6 |> arrange(-receiving_yds) |> filter(receiving_rec > 2)  |> rename('yds/att' = 'receiving_avg')
+view(wk_up_f_te_wk6)
+
+#slackr::slackr_csv(wk_up_f_te,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 TEs ",
+  #                 initial_comment = "WK 2 TEs (arranged by yards)",
+   #                channels = "#scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+
+##view(wk_up_f_te)
+```
+
+```{r}
+```
+
+```{r}
+weekly_updates_de_tfl_wk6 <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+de_pos_tfl_wk6 <- cfbd_team_roster(year = 2023) |> filter(position == "DE") |> select('athlete_id','position')
+de_pos_tfl_wk6$athlete_id <- as.numeric(as.character(de_pos_tfl_wk6$athlete_id )) 
+de_weekly_updates_tfl_wk6 <- right_join(weekly_updates_de_tfl_wk6,de_pos_tfl_wk6,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_de_tfl_wk6 <- de_weekly_updates_tfl_wk6 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur)|> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot > 0)
+view(wk_up_f_de_tfl_wk6)
+#slackr::slackr_csv(wk_up_f_de_tfl,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 DEs (tfl) ",
+  #                 initial_comment = "WK 2 DEs (arranged by tackles for loss)",
+   #                channels = "#scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+
+
+##view(wk_up_f_de_tfl_wk4)
+```
+
+
+```{r}
+weekly_updates_de_scks <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+de_pos_scks <- cfbd_team_roster(year = 2023) |> filter(position == "DE") |> select('athlete_id','position')
+de_weekly_updates_scks <- right_join(weekly_updates_de_scks,de_pos_scks,by = "athlete_id")
+wk_up_2_de_scks <- de_weekly_updates_scks |> select(name,team,position,tot,solo,sacks,tfl,qb_hur)
+wk_up_2_de_scks$tot <- as.numeric(as.character(wk_up_2_de_scks$tot)) 
+wk_up_2_de_scks$solo <- as.numeric(as.character(wk_up_2_de_scks$solo))
+wk_up_2_de_scks$sacks <- as.numeric(as.character(wk_up_2_de_scks$sacks))
+wk_up_2_de_scks$tfl <- as.numeric(as.character(wk_up_2_de_scks$tfl)) 
+#wk_up_2_de_scks$pd <- as.numeric(as.character(wk_up_2_de_scks$pd)) 
+wk_up_2_de_scks$qb_hur <- as.integer(as.character(wk_up_2_de_scks$qb_hur)) 
+wk_up_f_de_scks_1_wk6 <- wk_up_2_de_scks |> arrange(-sacks) |> na.omit() |> filter(sacks > 0)
+#view(wk_up_f_de_scks_1_wk5)
+
+#slackr::slackr_csv(wk_up_f_de_scks_1,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 DEs (sacks)",
+  #                 initial_comment = "week 2 DEs (arranged by sacks)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+```{r}
+weekly_updates_dl_tfl <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+dl_pos_tfl_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "DL") |> select('athlete_id','position')
+dl_pos_tfl_wk5$athlete_id <- as.numeric(as.character(dl_pos_tfl_wk5$athlete_id )) 
+dl_weekly_updates_tfl_wk5 <- right_join(weekly_updates_dl_tfl,dl_pos_tfl_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_dl_tfl_wk6 <- dl_weekly_updates_tfl_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur)|> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot > 0)
+view(wk_up_f_dl_tfl_wk6)
+
+#slackr::slackr_csv(wk_up_f_dl_tfl,filename = tempfile(fileext = ".csv"),
+                 #  title = "week 2 2023 DL (tfl)",
+                 #  initial_comment = "week 2 DL tfl (arranged by tfl, labeled DL on roster, could be DE or DT)",
+               #    channels = "scouting",
+                 # token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+```{r}
+weekly_updates_dt_tfl <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive")|> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Moutain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+dt_pos_tfl_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "DT") |> select('athlete_id','position')
+dt_pos_tfl_wk5$athlete_id <- as.numeric(as.character(dt_pos_tfl_wk5$athlete_id )) 
+dt_weekly_updates_tfl_wk5 <- right_join(weekly_updates_dt_tfl,dt_pos_tfl_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_dt_tfl_wk6 <- dt_weekly_updates_tfl_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur)|> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot > 0)
+
+wk_up_f_dt_scks_wk6 <- dt_weekly_updates_tfl_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur)|> arrange(-defensive_sacks) |> na.omit() |> filter(defensive_sacks > 0)
+view(wk_up_f_dt_tfl_wk6)
+view(wk_up_f_dt_scks_wk6)
+
+
+
+#slackr::slackr_csv(wk_up_f_dt_tfl_2,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 DT (tfl)",
+  #                 initial_comment = "week 2 DT tfl (arranged by tfl)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+```{r}
+weekly_updates_dt_scks <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive")|> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Moutain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+dt_pos_scks <- cfbd_team_roster(year = 2023) |> filter(position == "DT") |> select('athlete_id','position')
+dt_weekly_updates_scks <- right_join(weekly_updates_dt_scks,dt_pos_scks,by = "athlete_id")
+wk_up_2_dt_scks <- dt_weekly_updates_scks |> select(name,team,position,tot,solo,sacks,tfl,qb_hur)
+wk_up_2_dt_scks$tot <- as.numeric(as.character(wk_up_2_dt_scks$tot)) 
+wk_up_2_dt_scks$solo <- as.numeric(as.character(wk_up_2_dt_scks$solo))
+wk_up_2_dt_scks$sacks <- as.numeric(as.character(wk_up_2_dt_scks$sacks))
+wk_up_2_dt_scks$tfl <- as.numeric(as.character(wk_up_2_dt_scks$tfl)) 
+#wk_up_2_dt_scks$pd <- as.numeric(as.character(wk_up_2_dt_scks$pd)) 
+wk_up_2_dt_scks$qb_hur <- as.integer(as.character(wk_up_2_dt_scks$qb_hur)) 
+wk_up_f_dt_scks_wk5 <- wk_up_2_dt_scks |> arrange(-sacks) |> na.omit() |> filter(sacks > 0)
+view(wk_up_f_dt_scks_wk5)
+#slackr::slackr_csv(wk_up_f_dt_scks,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 DT (sacks)",
+  #                 initial_comment = "week 2 DT sacks (arranged by sacks)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+
+```{r}
+weekly_updates_lb_tfl <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+lb_pos_tfl_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "LB") |> select('athlete_id','position')
+lb_pos_tfl_wk5$athlete_id <- as.numeric(as.character(lb_pos_tfl_wk5$athlete_id )) 
+lb_weekly_updates_tfl_wk5 <- right_join(weekly_updates_lb_tfl,lb_pos_tfl_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_lb_tfl_wk5 <- lb_weekly_updates_tfl_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur)|> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot > 0)
+#wk_up_2_lb_tfl$tot <- as.numeric(as.character(wk_up_2_lb_tfl$tot)) 
+#wk_up_2_lb_tfl$solo <- as.numeric(as.character(wk_up_2_lb_tfl$solo))
+#wk_up_2_lb_tfl$sacks <- as.numeric(as.character(wk_up_2_lb_tfl$sacks))
+#wk_up_2_lb_tfl$tfl <- as.numeric(as.character(wk_up_2_lb_tfl$tfl)) 
+#wk_up_2_lb_tfl$pd <- as.numeric(as.character(wk_up_2_lb_tfl$pd)) 
+#wk_up_2_lb_tfl$qb_hur <- as.integer(as.character(wk_up_2_lb_tfl$qb_hur)) 
+wk_up_f_lb_tfl_wk6_1 <- wk_up_f_lb_tfl_wk5 |> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot >= 4)
+view(wk_up_f_lb_tfl_wk6_1)
+
+#slackr::slackr_csv(wk_up_f_lb_tfl_1,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 LBs (tfl)",
+  #                 initial_comment = "week 2 LBs (arranged by tfl)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+
+```{r}
+weekly_updates_db_tot <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+db_pos_tot_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "DB") |> select('athlete_id','position')
+db_pos_tot_wk5$athlete_id <- as.numeric(as.character(db_pos_tot_wk5$athlete_id )) 
+db_weekly_updates_tot_wk5 <- right_join(weekly_updates_db_tot,db_pos_tot_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_db_tot_wk6 <- db_weekly_updates_tot_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur,defensive_pd)|> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot > 0)
+#wk_up_2_db_tot$tot <- as.numeric(as.character(wk_up_2_db_tot$tot)) 
+#wk_up_2_db_tot$solo <- as.numeric(as.character(wk_up_2_db_tot$solo))
+#wk_up_2_db_tot$sacks <- as.numeric(as.character(wk_up_2_db_tot$sacks))
+#wk_up_2_db_tot$tfl <- as.numeric(as.character(wk_up_2_db_tot$tfl)) 
+#wk_up_2_db_tot$pd <- as.integer(as.character(wk_up_2_db_tot$pd)) 
+#wk_up_2_db_tot$qb_hur <- as.integer(as.character(wk_up_2_db_tot$qb_hur)) 
+#wk_up_f_db_tot_wk5 <- wk_up_2_db_tot |> arrange(-tot) |> na.omit() |> filter(tot >= 4)
+
+view(wk_up_f_db_tot_wk6)
+
+#slackr::slackr_csv(wk_up_f_db_tot,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 DBs (total tackles)",
+  #                initial_comment = "week 2 DBs (arranged by total tackles, labeled DB on roster could be a slot defender, CB, or S)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+
+```{r}
+weekly_updates_db_pd <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Moutain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+db_pos_pd_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "DB") |> select('athlete_id','position')
+db_pos_pd_wk5$athlete_id <- as.numeric(as.character(db_pos_pd_wk5$athlete_id )) 
+db_weekly_updates_pd_wk5 <- right_join(weekly_updates_db_pd,db_pos_pd_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_db_pd_wk6 <- db_weekly_updates_pd_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur,defensive_pd)|> arrange(-defensive_pd) |> na.omit() |> filter(defensive_pd > 0)
+#wk_up_2_db_pd$tot <- as.numeric(as.character(wk_up_2_db_pd$tot)) 
+#wk_up_2_db_pd$solo <- as.numeric(as.character(wk_up_2_db_pd$solo))
+#wk_up_2_db_pd$sacks <- as.numeric(as.character(wk_up_2_db_pd$sacks))
+#wk_up_2_db_pd$tfl <- as.numeric(as.character(wk_up_2_db_pd$tfl)) 
+#wk_up_2_db_pd$pd <- as.integer(as.character(wk_up_2_db_pd$pd)) 
+#wk_up_2_db_pd$qb_hur <- as.integer(as.character(wk_up_2_db_pd$qb_hur)) 
+#wk_up_f_db_pd_wk5 <- wk_up_2_db_pd |> arrange(-pd) |> na.omit() |> filter(pd > 0)
+view(wk_up_f_db_pd_wk6)
+
+#slackr::slackr_csv(wk_up_f_db_pd,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 DBs (passes defended)",
+  #                initial_comment = "week 2 DBs (arranged by passes defended, labeled DB on roster could be a slot defender, CB, or S)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+
+```{r}
+weekly_updates_cb_pd <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+cb_pos_pd_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "CB") |> select('athlete_id','position')
+cb_pos_pd_wk5$athlete_id <- as.numeric(as.character(cb_pos_pd_wk5$athlete_id )) 
+cb_weekly_updates_pd_wk5 <- right_join(weekly_updates_cb_pd,cb_pos_pd_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_cb_pd_wk6 <- cb_weekly_updates_pd_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur,defensive_pd)|> arrange(-defensive_pd) |> na.omit() |> filter(defensive_pd > 0)
+#wk_up_2_db_pd$tot <- as.numeric(as.character(wk_up_2_db_pd$tot)) 
+#wk_up_2_db_pd$solo <- as.numeric(as.character(wk_up_2_db_pd$solo))
+#wk_up_2_db_pd$sacks <- as.numeric(as.character(wk_up_2_db_pd$sacks))
+#wk_up_2_db_pd$tfl <- as.numeric(as.character(wk_up_2_db_pd$tfl)) 
+#wk_up_2_db_pd$pd <- as.integer(as.character(wk_up_2_db_pd$pd)) 
+#wk_up_2_db_pd$qb_hur <- as.integer(as.character(wk_up_2_db_pd$qb_hur)) 
+#wk_up_f_db_pd_wk5 <- wk_up_2_db_pd |> arrange(-pd) |> na.omit() |> filter(pd > 0)
+view(wk_up_f_cb_pd_wk6)
+#slackr::slackr_csv(wk_up_f_cb_pd_1,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 CBs (passes defended)",
+  #                initial_comment = "week 2 CBs (arranged by passes defended)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+
+```{r}
+weekly_updates_s_tot <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+s_pos_tot_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "S") |> select('athlete_id','position')
+s_pos_tot_wk5$athlete_id <- as.numeric(as.character(s_pos_tot_wk5$athlete_id )) 
+s_weekly_updates_tot_wk5 <- right_join(weekly_updates_s_tot,s_pos_tot_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_s_tot_wk6 <- s_weekly_updates_tot_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur,defensive_pd)|> arrange(-defensive_tot) |> na.omit() |> filter(defensive_tot > 0)
+#wk_up_2_s_tot$tot <- as.numeric(as.character(wk_up_2_s_tot$tot)) 
+#wk_up_2_s_tot$solo <- as.numeric(as.character(wk_up_2_s_tot$solo))
+#wk_up_2_s_tot$sacks <- as.numeric(as.character(wk_up_2_s_tot$sacks))
+#wk_up_2_s_tot$tfl <- as.numeric(as.character(wk_up_2_s_tot$tfl)) 
+#wk_up_2_s_tot$pd <- as.integer(as.character(wk_up_2_s_tot$pd)) 
+#wk_up_2_s_tot$qb_hur <- as.integer(as.character(wk_up_2_s_tot$qb_hur)) 
+#wk_up_f_s_tot_wk5 <- wk_up_2_s_tot |> arrange(-tot) |> na.omit() |> filter(tot >= 3)
+view(wk_up_f_s_tot_wk6)
+#slackr::slackr_csv(wk_up_f_s_tot,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 S (total tackles)",
+  #                initial_comment = "week 2 S (arranged by total tackles)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+
+```
+
+
+```{r}
+weekly_updates_s_pd <-  cfbd_game_player_stats(year = 2023, week = 6, category = "defensive") |> 
+  filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+                           "Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+s_pos_pd_wk5 <- cfbd_team_roster(year = 2023) |> filter(position == "S") |> select('athlete_id','position')
+s_pos_pd_wk5$athlete_id <- as.numeric(as.character(s_pos_pd_wk5$athlete_id )) 
+s_weekly_updates_pd_wk5 <- right_join(weekly_updates_s_pd,s_pos_pd_wk5,by = "athlete_id")
+#view(de_weekly_updates_tfl_wk5)
+wk_up_f_s_pd_wk6 <- s_weekly_updates_pd_wk5 |> select(athlete_name,team,position,defensive_tot,defensive_solo,defensive_sacks,defensive_tfl,defensive_qb_hur,defensive_pd)|> arrange(-defensive_pd) |> na.omit() |> filter(defensive_pd > 0)
+#wk_up_2_s_pd$tot <- as.numeric(as.character(wk_up_2_s_pd$tot)) 
+#wk_up_2_s_pd$solo <- as.numeric(as.character(wk_up_2_s_pd$solo))
+#wk_up_2_s_pd$sacks <- as.numeric(as.character(wk_up_2_s_pd$sacks))
+#wk_up_2_s_pd$tfl <- as.numeric(as.character(wk_up_2_s_pd$tfl)) 
+#wk_up_2_s_pd$pd <- as.integer(as.character(wk_up_2_s_pd$pd)) 
+#wk_up_2_s_pd$qb_hur <- as.integer(as.character(wk_up_2_s_pd$qb_hur)) 
+#wk_up_f_s_pd_wk5 <- wk_up_2_s_pd |> arrange(-pd) |> filter(pd > 0) |> na.omit()
+view(wk_up_f_s_pd_wk6)
+
+#slackr::slackr_csv(wk_up_f_s_pd,filename = tempfile(fileext = ".csv"),
+ #                  title = "week 2 2023 S (passes defended)",
+  #                initial_comment = "week 2 S (arranged by passes defended)",
+   #                channels = "scouting",
+    #               token = "xoxb-3534067422708-5760100922337-lnTu6aUSkq2xDqc4yrxqPQzT")
+```
+
+
+```{r}
+weekly_updates_def_1 <-  cfbd_game_player_stats(year = 2023, week = 3, category = "defensive") |> filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC","Mid-American","Sun Belt","Mountain West","American Athletic","Conference USA","ACC","Big 12"))
+##view(weekly_updates_de_tfl)
+def_pos <- cfbd_team_roster(year = 2023) |> filter(position %in% c("DE","LB")) |> select('athlete_id','position')
+def_weekly_updates <- right_join(weekly_updates_def,def_pos,by = "athlete_id")
+wk_up_2_def <- def_weekly_updates |> select(name,team,position,tot,solo,sacks,tfl,qb_hur)
+wk_up_2_def$tot <- as.numeric(as.character(wk_up_2_def$tot)) 
+wk_up_2_def$solo <- as.numeric(as.character(wk_up_2_def$solo))
+wk_up_2_def$sacks <- as.numeric(as.character(wk_up_2_def$sacks))
+wk_up_2_def$tfl <- as.numeric(as.character(wk_up_2_def$tfl)) 
+#wk_up_2_de_tfl$pd <- as.numeric(as.character(wk_up_2_de_tfl$pd)) 
+wk_up_2_def$qb_hur <- as.integer(as.character(wk_up_2_def$qb_hur)) 
+#ppa <- cfbd_metrics_ppa_players_games(year = 2023, week = 4, position = "QB")
+#view(ppa)
+
+#weekly_updates <-  cfbd_game_player_stats(year = 2023, week = 4, category = "passing")
+#wk_up_2 <- weekly_updates |> mutate(comp = word(weekly_updates$c_att, 1, sep="/"))
+#wk_up_3 <- wk_up_2 |> mutate(att = word(weekly_updates$c_att, 2, sep="/"))
+#wk_up_4 <- wk_up_3 |> filter(conference %in% c("Pac-12","Big Ten", "FBS Independents","SEC",
+ #                                              "Mid-American","Sun Belt","Moutain West","American Athletic","Conference USA","ACC","Big 12")) |>  select(name,c_att,yds,avg,td,int,team,qbr,comp,att) 
+#|> 
+ # filter(!grepl("/",comp))
+#wk_up_4$comp <- as.numeric(wk_up_4$comp) 
+#wk_up_4$yds <- as.numeric(wk_up_4$yds)  
+#wk_up_4$avg <- as.numeric(wk_up_4$avg)  
+#wk_up_4$td <- as.numeric(wk_up_4$td)  
+#wk_up_4$int <- as.numeric(wk_up_4$int)  
+#wk_up_4$qbr <- as.factor(wk_up_4$qbr) 
+#wk_up_4$att <- as.numeric(wk_up_4$att) 
+#str(wk_up_4$comp)
+##view(wk_up_4)
+#wk_up_5_2 <- wk_up_4 |> arrange(-avg) |> 
+ # select(-qbr,-c_att) |> rename('yds/att' = 'avg')
+##view(weekly_updates)
+#view(wk_up_5_2)
+
+#top_qb_week_3 <- left_join(wk_up_5_2,ppa, by = "name","team")
+#view(top_qb_week_3)
+
+#test <- cfbd_metrics_ppa_games(year = 2023, conference = "SEC")
+#view(test)
+
+
+```
+
+
+
+```
+
+|> 
