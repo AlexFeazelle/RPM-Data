@@ -1,2 +1,2 @@
 # RPM-Data
-Scripts for weekly stat leader updates
+Scripts/Graphs/Functions for RPM Data weekly stat updates and the accompanying vizualizations. 
